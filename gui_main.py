@@ -3,15 +3,30 @@
 #            - 오리지널 Tkinter 사용 로컬 실행 파일(gui_main.py) 생성
 #            - 결과 파일(.tar, .txt)의 루트 폴더 자동 복사 기능 추가
 #            - fab2 패키지 내 파일 핸들 누수 수정(resource management)
+#            - 리눅스(Linux) 및 macOS 호환성을 위한 크로스 플랫폼 지원 추가
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import os
 import shutil
 import datetime
 import sys
+import platform
+import subprocess
 
 # 프로젝트 루트 경로를 path에 추가하여 fab2 모듈 임포트 가능하게 함
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+def open_file_explorer(path):
+    """플랫폼별 파일 탐색기 열기 함수 (크로스 플랫폼 지원)"""
+    try:
+        if platform.system() == "Windows":
+            os.startfile(path)
+        elif platform.system() == "Darwin":  # macOS
+            subprocess.run(["open", path])
+        else:  # Linux
+            subprocess.run(["xdg-open", path])
+    except Exception as e:
+        print(f"탐색기 열기 실패: {e}")
 
 try:
     from fab2 import EXCEL_TO_TEXT_SPD_NEW_r3, F2_NIKON_ASML_MERGE_SPD_NEW_r1
@@ -27,12 +42,19 @@ class PhotoKeyApp:
         self.root.geometry("650x550")
         self.root.resizable(False, False)
         
-        # 스타일 설정
+        # 스타일 설정 (플랫폼별 폰트 대응)
+        default_font = ("Malgun Gothic", 10) if platform.system() == "Windows" else ("Helvetica", 10)
+        title_font = ("Malgun Gothic", 16, "bold") if platform.system() == "Windows" else ("Helvetica", 16, "bold")
+        small_font = ("Malgun Gothic", 9) if platform.system() == "Windows" else ("Helvetica", 9)
+        
         style = ttk.Style()
-        style.configure("TButton", font=("Malgun Gothic", 10))
-        style.configure("TLabel", font=("Malgun Gothic", 10))
+        style.configure("TButton", font=default_font)
+        style.configure("TLabel", font=default_font)
         
         # UI 구성
+        self.default_font = default_font
+        self.title_font = title_font
+        self.small_font = small_font
         self.setup_ui()
         
     def setup_ui(self):
@@ -48,40 +70,40 @@ class PhotoKeyApp:
         except Exception:
             pass
 
-        tk.Label(self.root, text="[ FAB2 PHOTOKEY 제작 시스템 ]", font=("Malgun Gothic", 16, "bold")).pack(pady=10)
+        tk.Label(self.root, text="[ FAB2 PHOTOKEY 제작 시스템 ]", font=self.title_font).pack(pady=10)
 
         # 1. 파일 선택 프레임
-        frame1 = tk.LabelFrame(self.root, text=" 1. PHOTOKEY DRAWING GUIDE 파일 첨부 ", font=("Malgun Gothic", 10, "bold"), padx=15, pady=15)
+        frame1 = tk.LabelFrame(self.root, text=" 1. PHOTOKEY DRAWING GUIDE 파일 첨부 ", font=self.default_font, padx=15, pady=15)
         frame1.pack(fill="x", padx=30, pady=10)
 
         self.file_path_var = tk.StringVar()
-        tk.Entry(frame1, textvariable=self.file_path_var, width=55, font=("Malgun Gothic", 9)).pack(side="left", padx=(0, 10))
+        tk.Entry(frame1, textvariable=self.file_path_var, width=55, font=self.small_font).pack(side="left", padx=(0, 10))
         tk.Button(frame1, text="파일 찾기", command=self.browse_file, width=10).pack(side="left")
 
         # 2. GDS Name 입력 프레임
-        frame2 = tk.LabelFrame(self.root, text=" 2. GDS NAME (Process) 입력 ", font=("Malgun Gothic", 10, "bold"), padx=15, pady=15)
+        frame2 = tk.LabelFrame(self.root, text=" 2. GDS NAME (Process) 입력 ", font=self.default_font, padx=15, pady=15)
         frame2.pack(fill="x", padx=30, pady=10)
 
         self.process_var = tk.StringVar(value="BD130S_60um")
-        tk.Entry(frame2, textvariable=self.process_var, width=68, font=("Malgun Gothic", 10)).pack(pady=(0, 10))
+        tk.Entry(frame2, textvariable=self.process_var, width=68, font=self.default_font).pack(pady=(0, 10))
         
         info_text = (
             "-. PROCESS + S/L : BD130S_60UM\n"
             "-. PROCESS + S/L + 제품군 : BD180S_60UM_SPD\n\n"
             "[ GDS NAME에 'SPD' or 'NORMAL'을 쓰면 KEY 이름이 NIKON/ASML로 시작됩니다. ]"
         )
-        tk.Label(frame2, text=info_text, justify="left", font=("Malgun Gothic", 9), fg="#555555").pack(anchor="w")
+        tk.Label(frame2, text=info_text, justify="left", font=self.small_font, fg="#555555").pack(anchor="w")
 
         # 하단 버튼부
         btn_frame = tk.Frame(self.root)
         btn_frame.pack(pady=25)
 
         self.exec_btn = tk.Button(btn_frame, text="제작 시작 (Run)", command=self.run_process, 
-                                  width=18, height=2, bg="#00468b", fg="white", font=("Malgun Gothic", 11, "bold"))
+                                  width=18, height=2, bg="#00468b", fg="white", font=self.default_font)
         self.exec_btn.pack(side="left", padx=15)
         
         tk.Button(btn_frame, text="초기화", command=self.reset_fields, 
-                  width=12, height=2, font=("Malgun Gothic", 10)).pack(side="left", padx=15)
+                  width=12, height=2, font=self.default_font).pack(side="left", padx=15)
 
         # 상태 표시줄
         self.status_var = tk.StringVar(value="준비됨")
@@ -178,11 +200,8 @@ class PhotoKeyApp:
                 files_str = "\n".join(result_files)
                 messagebox.showinfo("성공", f"제작이 완료되었습니다!\n결과 파일들이 프로그램 폴더로 복사되었습니다.\n\n[생성된 파일]\n{files_str}")
                 
-                # 현재 폴더(루트) 열기
-                try:
-                    os.startfile(".")
-                except:
-                    pass
+                # 현재 폴더(루트) 열기 (크로스 플랫폼 지원)
+                open_file_explorer(".")
             else:
                 self.status_var.set("오류: 결과 파일을 찾을 수 없습니다.")
                 messagebox.showwarning("완료 확인 불가", "로직 수행은 끝났으나 결과 파일(.tar)을 찾을 수 없습니다.")
