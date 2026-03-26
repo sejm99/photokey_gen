@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAB2_PHOTOKEY</title>
+    <style>
+        body {
+           margin-left: 30px;
+           font-family : Arial;
+           font-size : 18px;
+           }
+     </style>
+</head>
+<body>
+    <a href="/"><h2> << Home </a>
+    <table>
+        <tr>
+            <th><img src="/static/images/logo.gif" alt="FAB2_PHOTOKEY"> </th>
+        </tr>
+    </table>  
+<form action="GEN_FAB2_PHOTOKEY" method="POST" enctype="multipart/form-data">
+    [ FAB2 PHOTOKEY 제작 ]<br> 
+    <br>
+    <label for="Process">PROCESS :</label>
+    <input type="text" id="Process_ID" name="Process" size="74" style="font-size: 14px; width: 300px;"><br>
+    <br>
+    <small>PHOTOKEY DRAWING GUIDE 파일을 첨부하세요.</small><br>
+    &nbsp;<input type="file" name="file" required style="font-size: 16px; width: 1500px;"accept="*/*"><br>
+    &nbsp;<input type="submit" value="업로드" style="font-size: 16px; width: 100px;"><br>
+    &nbsp;<input type="reset" style="font-size: 16px; width: 100px;"><br> 
+    <tr></tr>
+    <p><small><br>
+    &nbsp;[ PROCESS Sample ] <br>
+    &nbsp;&nbsp;&nbsp;1. KEY NAME PHOTOKEY <br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: IL110S_60UM, TS110S_60UM <br>
+    &nbsp;&nbsp;&nbsp;2. NIKON & ASML PHOTOKEY ['SPD' or 'NORMAL'] <br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: BD180S_60UM_SPD, BD130S_60UM_NORMAL <br>
+    &nbsp;&nbsp;&nbsp;3. Special : SC00SA or HC180S PHOTOKEY ['SC' or 'HC18'] <br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: SC100S_60UM, HC180S_60UM <br>
+    </small></p><br>
+</form>
+</body>
+</html>

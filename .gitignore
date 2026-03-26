@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+upload/
+*.tar
+*.txt
+*.zip
+.gemini/
+fab2/f2_gdsout/
+fab2/text/
+static/images/
