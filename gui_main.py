@@ -12,9 +12,29 @@ import datetime
 import sys
 import platform
 import subprocess
+import warnings
 
-# 프로젝트 루트 경로를 path에 추가하여 fab2 모듈 임포트 가능하게 함
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# openpyxl의 Data Validation 관련 경고 무시
+warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
+
+# 원래 실행된 위치(작업 디렉토리) 저장
+ORIGINAL_CWD = os.getcwd()
+
+# 프로젝트 루트 경로를 기준으로 작업 디렉토리 설정 및 path 추가 (EXE 호환 모드)
+if getattr(sys, 'frozen', False):
+    # PyInstaller 빌드 시 임시로 압축이 풀리는 폴더 경로를 BASE_DIR로 설정
+    BASE_DIR = sys._MEIPASS
+else:
+    # 일반 스크립트 실행인 경우 스크립트 위치를 BASE_DIR로 설정
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+os.chdir(BASE_DIR)
+sys.path.append(BASE_DIR)
+
+# 필요한 서브디렉토리 자동 생성 (EXE 환경 및 상대 경로 대응)
+for folder in ["upload", "fab2/text", "fab2/f2_gdsout"]:
+    if not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
 
 def open_file_explorer(path):
     """플랫폼별 파일 탐색기 열기 함수 (크로스 플랫폼 지원)"""
@@ -105,6 +125,9 @@ class PhotoKeyApp:
         tk.Button(btn_frame, text="초기화", command=self.reset_fields, 
                   width=12, height=2, font=self.default_font).pack(side="left", padx=15)
 
+        tk.Button(btn_frame, text="종료", command=self.root.destroy, 
+                  width=12, height=2, font=self.default_font).pack(side="left", padx=15)
+
         # 상태 표시줄
         self.status_var = tk.StringVar(value="준비됨")
         status_bar = tk.Label(self.root, textvariable=self.status_var, bd=1, relief=tk.SUNKEN, anchor="w", padx=10)
@@ -112,6 +135,7 @@ class PhotoKeyApp:
 
     def browse_file(self):
         filename = filedialog.askopenfilename(
+            initialdir=ORIGINAL_CWD,
             title="엑셀 가이드 파일 선택",
             filetypes=[("Excel Files", "*.xlsx *.xlsm"), ("All Files", "*.*")]
         )
@@ -171,13 +195,13 @@ class PhotoKeyApp:
             result_files = []
             if out_file and os.path.exists(out_file):
                 # .tar 파일 복사
-                shutil.copy2(out_file, "./")
+                shutil.copy2(out_file, ORIGINAL_CWD)
                 result_files.append(os.path.basename(out_file))
                 
                 # 대응하는 .txt 파일도 복사 (있다면)
                 txt_file = out_file.replace(".tar", ".txt")
                 if os.path.exists(txt_file):
-                    shutil.copy2(txt_file, "./")
+                    shutil.copy2(txt_file, ORIGINAL_CWD)
                     result_files.append(os.path.basename(txt_file))
                 
                 # HC18 등의 특별 케이스 (SPD 결과물이 추가로 있는 경우)
@@ -187,21 +211,21 @@ class PhotoKeyApp:
                     date_str = datetime.datetime.now().strftime("%y%m%d")
                     spd_out_file = f"./fab2/f2_gdsout/{spd_process}_PHOTOKEY_{date_str}.tar"
                     if os.path.exists(spd_out_file):
-                        shutil.copy2(spd_out_file, "./")
+                        shutil.copy2(spd_out_file, ORIGINAL_CWD)
                         result_files.append(os.path.basename(spd_out_file))
                         spd_txt_file = spd_out_file.replace(".tar", ".txt")
                         if os.path.exists(spd_txt_file):
-                            shutil.copy2(spd_txt_file, "./")
+                            shutil.copy2(spd_txt_file, ORIGINAL_CWD)
                             result_files.append(os.path.basename(spd_txt_file))
 
             # 4. 결과 확인 및 알림
             if result_files:
-                self.status_var.set("완료: 결과 파일이 루트 폴더로 복사되었습니다.")
+                self.status_var.set("완료: 결과 파일이 실행 폴더로 복사되었습니다.")
                 files_str = "\n".join(result_files)
-                messagebox.showinfo("성공", f"제작이 완료되었습니다!\n결과 파일들이 프로그램 폴더로 복사되었습니다.\n\n[생성된 파일]\n{files_str}")
+                messagebox.showinfo("성공", f"제작이 완료되었습니다!\n결과 파일들이 실행 폴더로 복사되었습니다.\n\n[생성된 파일]\n{files_str}")
                 
-                # 현재 폴더(루트) 열기 (크로스 플랫폼 지원)
-                open_file_explorer(".")
+                # 실행 폴더 열기 (크로스 플랫폼 지원)
+                open_file_explorer(ORIGINAL_CWD)
             else:
                 self.status_var.set("오류: 결과 파일을 찾을 수 없습니다.")
                 messagebox.showwarning("완료 확인 불가", "로직 수행은 끝났으나 결과 파일(.tar)을 찾을 수 없습니다.")

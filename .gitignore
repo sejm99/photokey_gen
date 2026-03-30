@@ -8,3 +8,9 @@ upload/
 fab2/f2_gdsout/
 fab2/text/
 static/images/
+build/
+dist/
+*.spec
+icon.ico
+icon.png
+BUILD_EXE.md
